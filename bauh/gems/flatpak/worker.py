@@ -40,7 +40,7 @@ class FlatpakAsyncDataLoader(Thread):
                         self.app.name = data.get('name')
 
                     self.app.description = data.get('description', data.get('summary', None))
-                    self.app.icon_url = data.get('iconMobileUrl', None)
+                    self.app.icon_url = data.get('iconDesktopUrl', None)
                     self.app.latest_version = data.get('currentReleaseVersion', self.app.version)
 
                     if self.app.latest_version and (not self.app.version or not self.app.update):

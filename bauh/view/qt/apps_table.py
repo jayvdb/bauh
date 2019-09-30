@@ -12,7 +12,7 @@ from bauh.api.abstract.cache import MemoryCache
 from bauh.api.abstract.model import PackageStatus
 from bauh.commons.html import strip_html
 from bauh.view.util import resource
-from bauh.view.qt import dialog
+from bauh.view.qt import dialog, view_utils
 from bauh.view.qt.components import IconButton
 from bauh.view.qt.view_model import PackageView, PackageViewStatus
 
@@ -314,13 +314,23 @@ class AppsTable(QTableWidget):
         if self.disk_cache and pkg.model.supports_disk_cache() and pkg.model.get_disk_icon_path() and os.path.exists(pkg.model.get_disk_icon_path()):
             with open(pkg.model.get_disk_icon_path(), 'rb') as f:
                 icon_bytes = f.read()
-                pixmap = QPixmap()
-                pixmap.loadFromData(icon_bytes)
-                icon = QIcon(pixmap)
-                self.icon_cache.add_non_existing(pkg.model.icon_url, {'icon': icon, 'bytes': icon_bytes})
+
+            pixmap = QPixmap()
+            pixmap.loadFromData(icon_bytes)
+            icon = QIcon(pixmap)
+            self.icon_cache.add_non_existing(pkg.model.icon_url, {'icon': icon, 'bytes': icon_bytes})
 
         elif not pkg.model.icon_url:
-            icon = QIcon(pkg.model.get_default_icon_path())
+
+            ipath = pkg.model.get_default_icon_path()
+
+            icon_data = self.icon_cache.get(ipath)
+
+            if not icon_data:
+                icon_data = {'icon': view_utils.load_icon(ipath, 15), 'bytes': None}
+                self.icon_cache.add(ipath, icon_data)
+
+            icon = QIcon(icon_data['icon'])
         else:
             icon_data = self.icon_cache.get(pkg.model.icon_url)
             icon = icon_data['icon'] if icon_data else QIcon(pkg.model.get_default_icon_path())
