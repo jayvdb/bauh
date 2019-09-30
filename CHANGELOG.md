@@ -8,7 +8,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Improvements
 - Installed files of AUR packages available in the Info window
 - Update notifications showing the number of updates by type as well
-- Improving Arch distro checking
+- AUR:
+    - Installed files available in the Info window
+    - Waiting for the the disk cache data loader only if needed
+    - Improving Arch distro checking
 - Replaced some .png icons by .svg to help with resolution scaling
 
 ### Fixes
