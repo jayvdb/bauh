@@ -11,10 +11,10 @@ from PyQt5.QtWidgets import QTableWidget, QTableView, QMenu, QAction, QTableWidg
 from bauh.api.abstract.cache import MemoryCache
 from bauh.api.abstract.model import PackageStatus
 from bauh.commons.html import strip_html
-from bauh.view.util import resource
-from bauh.view.qt import dialog, view_utils
+from bauh.view.qt import dialog
 from bauh.view.qt.components import IconButton
 from bauh.view.qt.view_model import PackageView, PackageViewStatus
+from bauh.view.util import resource
 
 INSTALL_BT_STYLE = 'background: {back}; color: white; font-size: 10px; font-weight: bold'
 
@@ -305,6 +305,17 @@ class AppsTable(QTableWidget):
         item.setToolTip(tooltip)
         self.setCellWidget(pkg.table_index, col, item)
 
+    def _read_icon(self, path: str) -> dict:
+        with open(path, 'rb') as f:
+            icon_bytes = f.read()
+
+        pixmap = QPixmap()
+        pixmap.loadFromData(icon_bytes)
+        icon = QIcon(pixmap)
+        data = {'icon': icon, 'bytes': icon_bytes}
+        self.icon_cache.add_non_existing(path, data)
+        return data
+
     def _set_col_name(self, col: int, pkg: PackageView):
         item = QTableWidgetItem()
         item.setText(pkg.model.name if pkg.model.name else '...')
@@ -312,25 +323,18 @@ class AppsTable(QTableWidget):
         item.setToolTip(self.i18n['app.name'].lower())
 
         if self.disk_cache and pkg.model.supports_disk_cache() and pkg.model.get_disk_icon_path() and os.path.exists(pkg.model.get_disk_icon_path()):
-            with open(pkg.model.get_disk_icon_path(), 'rb') as f:
-                icon_bytes = f.read()
-
-            pixmap = QPixmap()
-            pixmap.loadFromData(icon_bytes)
-            icon = QIcon(pixmap)
-            self.icon_cache.add_non_existing(pkg.model.icon_url, {'icon': icon, 'bytes': icon_bytes})
+            data = self._read_icon(pkg.model.get_disk_icon_path())
+            icon = data['icon']
 
         elif not pkg.model.icon_url:
 
             ipath = pkg.model.get_default_icon_path()
-
             icon_data = self.icon_cache.get(ipath)
 
             if not icon_data:
-                icon_data = {'icon': view_utils.load_icon(ipath, 15), 'bytes': None}
-                self.icon_cache.add(ipath, icon_data)
+                icon_data = self._read_icon(ipath)
 
-            icon = QIcon(icon_data['icon'])
+            icon = icon_data['icon']
         else:
             icon_data = self.icon_cache.get(pkg.model.icon_url)
             icon = icon_data['icon'] if icon_data else QIcon(pkg.model.get_default_icon_path())
